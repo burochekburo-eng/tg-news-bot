@@ -1,7 +1,7 @@
 import feedparser
 import requests
 import os
-from bs4 import BeautifulSoup
+import re
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 CHANNEL_ID = os.getenv("CHANNEL_ID")
@@ -10,9 +10,13 @@ RSS_FEEDS = [
     "https://news.google.com/rss/search?q=AI+Israel&hl=ru"
 ]
 
+# Простая очистка HTML тегов
 def clean_html(raw_html):
-    soup = BeautifulSoup(raw_html, "html.parser")
-    return soup.get_text()
+    # удаляем все теги
+    clean_text = re.sub(r'<[^>]+>', '', raw_html)
+    # заменяем HTML сущности
+    clean_text = clean_text.replace("&nbsp;", " ").replace("&amp;", "&")
+    return clean_text.strip()
 
 def send_to_telegram_message(caption):
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
@@ -20,6 +24,7 @@ def send_to_telegram_message(caption):
     r = requests.post(url, json=payload)
     print("Telegram response:", r.text)
 
+# Берём только одну самую свежую новость
 latest_entry = None
 for rss in RSS_FEEDS:
     feed = feedparser.parse(rss)
