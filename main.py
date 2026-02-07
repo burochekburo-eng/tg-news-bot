@@ -24,7 +24,7 @@ def rewrite(text):
     data = {
         "model": "gpt-4o-mini",
         "messages": [
-            {"role": "system", "content": "Ты переписываешь новость для Telegram: хук, что произошло, почему важно, вывод, теги. Пиши коротко, просто, цепко."},
+            {"role": "system", "content": "Ты переписываешь новость для Telegram. Сделай пост более детальным: хук, что произошло, подробности, почему важно, вывод, теги. Пиши простым языком, но интересно и цепко."},
             {"role": "user", "content": text}
         ]
     }
@@ -35,7 +35,7 @@ def rewrite(text):
         return r.json()["choices"][0]["message"]["content"]
     except (KeyError, IndexError):
         print("Ошибка OpenAI API:", r.text)
-        return text[:200]  # возвращаем первые 200 символов новости
+        return text[:400]  # возвращаем немного текста на случай ошибки
 
 # Функция отправки в Telegram
 def send_to_telegram(message):
@@ -44,13 +44,23 @@ def send_to_telegram(message):
         "chat_id": CHANNEL_ID,
         "text": message
     }
-    requests.post(url, json=payload)
+    r = requests.post(url, json=payload)
+    print("Ответ Telegram API:", r.text)  # чтобы видеть ошибки
 
-# Основной цикл по RSS
+# Основной цикл — выбираем только одну самую свежую новость
+latest_entry = None
+
 for rss in RSS_FEEDS:
     feed = feedparser.parse(rss)
     if not feed.entries:
         continue
-    entry = feed.entries[0]  # берём первую новость
-    post = rewrite(entry.title + ". " + entry.summary)
+    entry = feed.entries[0]
+    # Сравниваем даты, берём самую свежую
+    if latest_entry is None or entry.published_parsed > latest_entry.published_parsed:
+        latest_entry = entry
+
+# Если нашли новость — переписываем и отправляем
+if latest_entry:
+    text_to_rewrite = latest_entry.title + "\n\n" + latest_entry.summary
+    post = rewrite(text_to_rewrite)
     send_to_telegram(post)
