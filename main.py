@@ -21,17 +21,20 @@ def rewrite(text):
     data = {
         "model": "gpt-4o-mini",
         "messages": [
-            {"role": "system", "content": "Перепиши новость коротко для Telegram, добавь вывод."},
+            {"role": "system", "content": "Ты переписываешь новость для Telegram: хук, что произошло, почему важно, вывод, теги. Пиши коротко, просто, цепко."},
             {"role": "user", "content": text}
         ]
     }
     r = requests.post(url, headers=headers, json=data)
     return r.json()["choices"][0]["message"]["content"]
 
-feed = feedparser.parse(RSS_URL)
-entry = feed.entries[0]
-
-post = rewrite(entry.title + ". " + entry.summary)
+for rss in RSS_FEEDS:
+    feed = feedparser.parse(rss)
+    if not feed.entries:
+        continue
+    entry = feed.entries[0]
+    post = rewrite(entry.title + ". " + entry.summary)
+    send_to_telegram(post)
 
 requests.post(
     f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage",
