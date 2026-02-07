@@ -6,7 +6,11 @@ BOT_TOKEN = os.getenv("BOT_TOKEN")
 CHANNEL_ID = os.getenv("CHANNEL_ID")
 OPENAI_KEY = os.getenv("OPENAI_KEY")
 
-RSS_URL = "https://news.google.com/rss/search?q=AI&hl=ru"
+RSS_FEEDS = [
+    "https://news.google.com/rss/search?q=ChatGPT&hl=ru",
+    "https://news.google.com/rss/search?q=AI+Israel&hl=ru",
+    "https://news.google.com/rss/search?q=Neural+networks&hl=ru"
+]
 
 def rewrite(text):
     url = "https://api.openai.com/v1/chat/completions"
