@@ -2,51 +2,55 @@ import feedparser
 import requests
 import os
 
+# Секреты из GitHub Secrets
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 CHANNEL_ID = os.getenv("CHANNEL_ID")
-OPENAI_KEY = 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
+OPENAI_KEY = os.getenv("OPENAI_KEY")
 
+# Список RSS лент
 RSS_FEEDS = [
     "https://news.google.com/rss/search?q=ChatGPT&hl=ru",
     "https://news.google.com/rss/search?q=AI+Israel&hl=ru",
     "https://news.google.com/rss/search?q=Neural+networks&hl=ru"
 ]
 
-data = {
-    "model": "gpt-4o-mini",
-    "messages": [
-        {"role": "system", "content": "Перепиши коротко"},
-        {"role": "user", "content": "Привет, мир!"}
-    ]
-}
-
-r = requests.post(
-    "https://api.openai.com/v1/chat/completions",
-    headers={
+# Функция переписывания новости через OpenAI
+def rewrite(text):
+    url = "https://api.openai.com/v1/chat/completions"
+    headers = {
         "Authorization": f"Bearer {OPENAI_KEY}",
         "Content-Type": "application/json"
-    },
-    json=data
-)
-
-print(r.json()))
+    }
+    data = {
+        "model": "gpt-4o-mini",
+        "messages": [
+            {"role": "system", "content": "Ты переписываешь новость для Telegram: хук, что произошло, почему важно, вывод, теги. Пиши коротко, просто, цепко."},
+            {"role": "user", "content": text}
+        ]
+    }
+    r = requests.post(url, headers=headers, json=data)
 
     # Проверка ответа
     try:
         return r.json()["choices"][0]["message"]["content"]
     except (KeyError, IndexError):
-        print("Ошибка OpenAI API:", r.text)  # выведет что вернул API
-        return text[:200]  # просто возвращаем первые 200 символов новости
+        print("Ошибка OpenAI API:", r.text)
+        return text[:200]  # возвращаем первые 200 символов новости
 
+# Функция отправки в Telegram
+def send_to_telegram(message):
+    url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
+    payload = {
+        "chat_id": CHANNEL_ID,
+        "text": message
+    }
+    requests.post(url, json=payload)
+
+# Основной цикл по RSS
 for rss in RSS_FEEDS:
     feed = feedparser.parse(rss)
     if not feed.entries:
         continue
-    entry = feed.entries[0]
+    entry = feed.entries[0]  # берём первую новость
     post = rewrite(entry.title + ". " + entry.summary)
     send_to_telegram(post)
-
-requests.post(
-    f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage",
-    json={"chat_id": CHANNEL_ID, "text": post}
-)
