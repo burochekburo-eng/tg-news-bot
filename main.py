@@ -4,7 +4,7 @@ import os
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 CHANNEL_ID = os.getenv("CHANNEL_ID")
-OPENAI_KEY = os.getenv("OPENAI_KEY")
+OPENAI_KEY = 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
 
 RSS_FEEDS = [
     "https://news.google.com/rss/search?q=ChatGPT&hl=ru",
@@ -12,20 +12,24 @@ RSS_FEEDS = [
     "https://news.google.com/rss/search?q=Neural+networks&hl=ru"
 ]
 
-def rewrite(text):
-    url = "https://api.openai.com/v1/chat/completions"
-    headers = {
+data = {
+    "model": "gpt-4o-mini",
+    "messages": [
+        {"role": "system", "content": "Перепиши коротко"},
+        {"role": "user", "content": "Привет, мир!"}
+    ]
+}
+
+r = requests.post(
+    "https://api.openai.com/v1/chat/completions",
+    headers={
         "Authorization": f"Bearer {OPENAI_KEY}",
         "Content-Type": "application/json"
-    }
-    data = {
-        "model": "gpt-4o-mini",
-        "messages": [
-            {"role": "system", "content": "Ты переписываешь новость для Telegram: хук, что произошло, почему важно, вывод, теги. Пиши коротко, просто, цепко."},
-            {"role": "user", "content": text}
-        ]
-    }
-    r = requests.post(url, headers=headers, json=data)
+    },
+    json=data
+)
+
+print(r.json()))
 
     # Проверка ответа
     try:
