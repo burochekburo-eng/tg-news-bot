@@ -26,7 +26,13 @@ def rewrite(text):
         ]
     }
     r = requests.post(url, headers=headers, json=data)
-    return r.json()["choices"][0]["message"]["content"]
+
+    # Проверка ответа
+    try:
+        return r.json()["choices"][0]["message"]["content"]
+    except (KeyError, IndexError):
+        print("Ошибка OpenAI API:", r.text)  # выведет что вернул API
+        return text[:200]  # просто возвращаем первые 200 символов новости
 
 for rss in RSS_FEEDS:
     feed = feedparser.parse(rss)
